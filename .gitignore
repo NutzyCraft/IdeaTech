@@ -5,5 +5,4 @@ Thumbs.db
 # Editor directories
 .vscode/
 .idea/
-config.js
 .env
