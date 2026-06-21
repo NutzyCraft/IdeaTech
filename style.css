@@ -1067,6 +1067,7 @@ svg {
 .news-article {
   padding: var(--spacing-lg) 0 var(--spacing-xl);
   background: var(--white);
+  margin-top: 80px;
 }
 
 .article-header {

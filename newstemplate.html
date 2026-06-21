@@ -43,7 +43,6 @@
         <article id="article-content" class="news-article" style="display: none;">
             <div class="container">
                 <div class="article-header">
-                    <a href="news.html" class="back-link">← Back to News</a>
                     <div class="article-meta" id="article-date"></div>
                     <h1 id="article-title"></h1>
                 </div>
@@ -69,8 +68,19 @@
     <script src="components.js"></script>
     <script src="script.js"></script>
     <script src="config.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@contentful/rich-text-html-renderer@16.0.2/dist/rich-text-html-renderer.es5.min.js"></script>
     <script>
+        // Helper to extract text from Contentful Rich Text
+        function extractTextFromRichText(richText) {
+            if (!richText) return '';
+            if (typeof richText === 'string') return richText;
+            if (typeof richText !== 'object') return '';
+            if (richText.nodeType === 'text') return richText.value || '';
+            if (richText.content) {
+                return richText.content.map(extractTextFromRichText).join('');
+            }
+            return '';
+        }
+
         // Get slug from URL
         function getSlugFromURL() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -122,11 +132,13 @@
         function displayArticle(item, includes) {
             const fields = item.fields;
 
+            const titleText = extractTextFromRichText(fields.title) || 'Untitled';
+
             // Update page title
-            document.getElementById('page-title').textContent = fields.title ? `${fields.title} - Ideatech` : 'News Article - Ideatech';
+            document.getElementById('page-title').textContent = titleText !== 'Untitled' ? `${titleText} - Ideatech` : 'News Article - Ideatech';
 
             // Display title
-            document.getElementById('article-title').textContent = fields.title || 'Untitled';
+            document.getElementById('article-title').textContent = titleText;
 
             // Display date
             if (fields.date) {
@@ -145,7 +157,7 @@
                 const asset = includes.Asset.find(a => a.sys.id === assetId);
                 if (asset && asset.fields.file) {
                     const thumbnailUrl = 'https:' + asset.fields.file.url;
-                    thumbnailEl.innerHTML = `<img src="${thumbnailUrl}" alt="${fields.title || 'Article thumbnail'}">`;
+                    thumbnailEl.innerHTML = `<img src="${thumbnailUrl}" alt="${titleText}" style="width: 100%; max-width: 500px; height: auto; border-radius: 16px; margin: 2rem auto; display: block; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">`;
                 } else {
                     thumbnailEl.style.display = 'none';
                 }
@@ -153,15 +165,15 @@
                 thumbnailEl.style.display = 'none';
             }
 
-            // Display description (rich text)
+            // Display description
             const descriptionEl = document.getElementById('article-description');
             if (fields.description) {
-                // Check if the rich-text-html-renderer is available
-                if (typeof contentfulRichTextHtmlRenderer !== 'undefined') {
-                    const html = contentfulRichTextHtmlRenderer.documentToHtmlString(fields.description);
-                    descriptionEl.innerHTML = html;
+                if (typeof fields.description === 'string') {
+                    // Convert newlines to paragraphs
+                    const paragraphs = fields.description.split(/\n+/).filter(p => p.trim() !== '');
+                    descriptionEl.innerHTML = paragraphs.map(p => `<p>${p}</p>`).join('');
                 } else {
-                    // Fallback: display plain text if renderer is not loaded
+                    // Fallback if it is an object
                     descriptionEl.innerHTML = renderRichTextFallback(fields.description);
                 }
             }

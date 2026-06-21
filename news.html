@@ -60,6 +60,18 @@
     <script src="script.js"></script>
     <script src="config.js"></script>
     <script>
+        // Helper to extract text from Contentful Rich Text
+        function extractTextFromRichText(richText) {
+            if (!richText) return '';
+            if (typeof richText === 'string') return richText;
+            if (typeof richText !== 'object') return '';
+            if (richText.nodeType === 'text') return richText.value || '';
+            if (richText.content) {
+                return richText.content.map(extractTextFromRichText).join('');
+            }
+            return '';
+        }
+
         // Fetch news from Contentful
         async function fetchNews() {
             const loadingEl = document.getElementById('news-loading');
@@ -129,13 +141,15 @@
                 day: 'numeric'
             }) : '';
 
+            const titleText = extractTextFromRichText(fields.title) || 'Untitled';
+            
             card.innerHTML = `
                 <div class="news-card-image">
-                    ${thumbnailUrl ? `<img src="${thumbnailUrl}" alt="${fields.title || 'News thumbnail'}" loading="lazy">` : '<div class="placeholder-image">No Image</div>'}
+                    ${thumbnailUrl ? `<img src="${thumbnailUrl}" alt="${titleText}" loading="lazy">` : '<div class="placeholder-image">No Image</div>'}
                 </div>
                 <div class="news-card-content">
                     <div class="news-card-date">${date}</div>
-                    <h3 class="news-card-title">${fields.title || 'Untitled'}</h3>
+                    <h3 class="news-card-title">${titleText}</h3>
                     <p class="news-card-description">${fields.shortDescription || ''}</p>
                     <a href="newstemplate.html?slug=${fields.slug}" class="news-card-btn">Read More</a>
                 </div>
